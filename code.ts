@@ -21,10 +21,9 @@ Promise.all([font400, font100, font200, font300, font500, font600, font700, font
 
     // 3. 각 text 요소의 font-weight를 체크하고 그에 맞는 Pretendard Variable 폰트로 지정합니다.
     for (const textNode of textNodes) {
-      console.log(textNode)
 
       const cssWeight = Number(textNode.fontWeight)
-      
+
       textNode.fontName = { family: "Pretendard Variable", style: "Thin" }
       if (cssWeight <= 149) {
         textNode.fontName = { family: "Pretendard Variable", style: "Thin" }
