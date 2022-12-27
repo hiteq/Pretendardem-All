@@ -18,26 +18,31 @@ Promise.all([font400, font100, font200, font300, font500, font600, font700, font
   .then(() => {
     // 2. 현재 page에 있는 모든 text 요소를 가져옵니다.
     const textNodes = figma.currentPage.findAllWithCriteria({ types: ['TEXT'] })
+    let count = 0
+    let ignored = 0
+    // 처리해야할 레이어의 수를 textNodes.length로 알려줍니다.
+    // onDequeue되는 경우 즉시 종료되는 것을 방지하기 위해 timeout을 0으로 설정합니다.
+    figma.notify(`Processing ${textNodes.length} layers...`, { timeout: 500 })
 
     // 3. 각 text 요소의 font-weight를 체크하고 그에 맞는 Pretendard Variable 폰트로 지정합니다.
     for (const textNode of textNodes) {
 
       // textNode의 fontWeight가 figma.mixed일 경우, 아래에 cssWeight로 처리하는것을 무시하고 fontWeight를 출력한다.
       if (textNode.fontWeight === figma.mixed) {
-        // textNode에 담긴 characters의 font-family와 font-weight를 추출하여, array로 만든다.
-        const textNodeFont = textNode.characters.split(' ').map((item) => {
-          return item.split('/')[0]
-        })
-        
+        // figma.mixed일 경우, ignored를 1씩 증가시키고, notify에 ignored를 출력한다.
+        ignored++
+
         continue
       }
 
       const cssWeight = Number(textNode.fontWeight)
 
       setFontName(textNode, cssWeight)
-
+      count++
+      
     }
-    // 4. 작업이 완료되면 플러그인을 종료합니다.
+    // 4. 작업이 완료되면 작업이 끝났음을 notify하고 플러그인을 종료합니다.
+    figma.notify(`All ${count} text layers have been updated.`)
     figma.closePlugin()
   })
 
