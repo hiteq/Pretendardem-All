@@ -29,15 +29,21 @@ Promise.all([font400, font100, font200, font300, font500, font600, font700, font
 
       // textNode의 fontWeight가 figma.mixed일 경우, 아래에 cssWeight로 처리하는것을 무시하고 fontWeight를 출력한다.
       if (textNode.fontWeight === figma.mixed) {
-        // figma.mixed일 경우, ignored를 1씩 증가시키고, notify에 ignored를 출력한다.
-        ignored++
+        // figma.mixed일 경우, 한 글자씩 checkFontWeight를 실행한다.
+        // 한 글자씩 family에 "Pretendard Variable", style에는 checkFontWeight의 string 리턴값을 넣어준다.
+        // for (let i = 0; i < textNode.characters.length; i++) {
+        //   const cssWeight = Number(textNode.getRangeFontName(i, i + 1)[0].style)
+        //   textNode.setRangeFontName(i, i + 1, { family: "Pretendard Variable", style: String(checkFontWeight(cssWeight)) })
+        // }
+        count++
 
         continue
       }
 
       const cssWeight = Number(textNode.fontWeight)
+      //family에 "Pretendard Variable", style에는 checkFontWeight의 string 리턴값을 넣어준다.
+      textNode.fontName = { family: "Pretendard Variable", style: String(checkFontWeight(cssWeight)) }
 
-      setFontName(textNode, cssWeight)
       count++
       
     }
@@ -65,5 +71,29 @@ Promise.all([font400, font100, font200, font300, font500, font600, font700, font
       textNode.fontName = { family: "Pretendard Variable", style: "ExtraBold" }
     } else if (cssWeight >= 850) {
       textNode.fontName = { family: "Pretendard Variable", style: "Black" }
+    }
+  }
+  
+  // 위의 setFontName의 코드를 참고하여, style만 반환하는 checkFontWeight 함수를 만들어보세요.
+  // return값은 string type입니다.
+  function checkFontWeight (cssWeight: number) {
+    if (cssWeight <= 149) {
+      return "Thin"
+    } else if (cssWeight >= 150 && cssWeight < 250) {
+      return "ExtraLight"
+    } else if (cssWeight >= 250 && cssWeight < 350) {
+      return "Light"
+    } else if (cssWeight >= 350 && cssWeight < 450) {
+      return "Regular"
+    } else if (cssWeight >= 450 && cssWeight < 550) {
+      return "Medium"
+    } else if (cssWeight >= 550 && cssWeight < 650) {
+      return "SemiBold"
+    } else if (cssWeight >= 650 && cssWeight < 750) {
+      return "Bold"
+    } else if (cssWeight >= 750 && cssWeight < 850) {
+      return "ExtraBold"
+    } else if (cssWeight >= 850) {
+      return "Black"
     }
   }
