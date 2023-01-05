@@ -53,11 +53,11 @@ loadFonts()
     }
     // 4. 작업이 완료되면 작업이 끝났음을 notify하고 플러그인을 종료합니다.
     console.log(`All done.`)
-    figma.closePlugin(`All ${count} text layers have been updated.`)
+    figma.closePlugin(`✅ All ${count} text layers have been updated.`)
   })
   .catch((error) => {
     console.log(error)
-    figma.closePlugin(`Failed to load fonts. Please check if the Pretendard Variable is installed and try again.`)
+    figma.closePlugin(`❌ Failed to load fonts. Please check if the Pretendard Variable is installed and try again.`)
     
   })
 
