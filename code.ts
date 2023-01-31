@@ -36,9 +36,15 @@ loadFonts()
     // 3. 각 text 요소의 font-weight를 체크하고 그에 맞는 Pretendard Variable 폰트로 지정합니다.
     for (const textNode of textNodes) {
 
-      // textNode의 fontWeight가 figma.mixed일 경우, 아래에 cssWeight로 처리하는것을 무시하고 fontWeight를 출력한다.
+      // textNode의 fontWeight가 figma.mixed일 경우, 아래의 if문 내부처리를 따른다.
       if (textNode.fontWeight === figma.mixed) {
-        // figma.mixed일 경우, 한 글자씩 checkFontWeight를 실행한다.        
+        // textNode에 담긴 한 글자마다, fontWeight를 checkFontWeight()를 실행하고, return되는 String 값을 그 글자의 fontName의 style로 지정한다.
+        for (let i = 0; i < textNode.characters.length; i++) {
+          const charWeight = Number(textNode.getRangeFontWeight(i, i+1))
+          console.log(charWeight)
+          textNode.setRangeFontName(i, i+1, { family: `Pretendard Variable`, style: String(checkFontWeight(charWeight)) })
+        }
+        
         count++
 
         continue
