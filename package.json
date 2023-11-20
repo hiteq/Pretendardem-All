@@ -1,6 +1,6 @@
 {
   "name": "pretendardem_all",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "모든 텍스트 노드의 글꼴을 Pretendard로 변경합니다.",
   "main": "code.js",
   "scripts": {

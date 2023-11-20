@@ -12,12 +12,26 @@ const loadFonts = async () => {
   });
 }
 
+const loadAllFonts = async (textNodes: SceneNode[]) => {
+  const fontPromises = textNodes.flatMap((node: SceneNode) => {
+    if ("getRangeAllFontNames" in node && "characters" in node) {
+      const textNode = node as TextNode;
+      const fontNames = textNode.getRangeAllFontNames(0, textNode.characters.length);
+      return fontNames.map(fontName => figma.loadFontAsync(fontName));
+    }
+    return [];
+  });
+
+  await Promise.all(fontPromises);
+}
+
 loadFonts()
   .then(async () => {
     console.log(`Fonts loaded.`)
     figma.notify(`Change all the text layers on the current page to ${fontName}.`, { timeout: 500})
 
-    const textNodes = figma.currentPage.findAllWithCriteria({ types: ['TEXT'] })
+    const textNodes = figma.currentPage.findAll(node => node.type === 'TEXT') as TextNode[];
+    await loadAllFonts(textNodes);
     if (textNodes.length === 0) {
       console.log(`No text nodes found on the current page.`)
       return
@@ -33,12 +47,16 @@ loadFonts()
         continue;
       }
 
-      if (textNode.fontWeight === figma.mixed) {
+      if (textNode.fontWeight === figma.mixed || textNode.fontName === figma.mixed) {
         for (let i = 0; i < textNode.characters.length; i++) {
           const charWeight = Number(textNode.getRangeFontWeight(i, i+1))
+          const charFontName = textNode.getRangeFontName(i, i+1)
           console.log(charWeight)
-          await figma.loadFontAsync({ family: fontName, style: String(getFontStyle(charWeight)) })
-          textNode.setRangeFontName(i, i+1, { family: fontName, style: String(getFontStyle(charWeight)) })
+          if (typeof charFontName !== 'symbol') {
+            await figma.loadFontAsync(charFontName)
+            await figma.loadFontAsync({ family: fontName, style: String(getFontStyle(charWeight)) })
+            textNode.setRangeFontName(i, i+1, { family: fontName, style: String(getFontStyle(charWeight)) })
+          }
         }
         
         count++
@@ -47,7 +65,7 @@ loadFonts()
       }
 
       const cssWeight = Number(textNode.fontWeight)
-      await figma.loadFontAsync({ family: fontName, style: String(getFontStyle(cssWeight)) })
+      await figma.loadFontAsync({ family: textNode.fontName.family, style: String(getFontStyle(cssWeight)) })
       textNode.fontName = { family: fontName, style: String(getFontStyle(cssWeight)) }
 
       count++
