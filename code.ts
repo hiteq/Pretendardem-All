@@ -1,4 +1,4 @@
-const fontName = 'Pretendard'; // Change this to use a different font
+const fontName = 'Pretendard Variable'; // Change this to use a different font
 
 const loadFonts = async () => {
   console.log(`Awaiting the fonts.`)
@@ -30,11 +30,23 @@ loadFonts()
     console.log(`Fonts loaded.`)
     figma.notify(`Change all the text layers on the current page to ${fontName}.`, { timeout: 500})
 
-    const textNodes = figma.currentPage.findAll(node => node.type === 'TEXT') as TextNode[];
+    const selectedNodes = figma.currentPage.selection;
+    if (selectedNodes.length === 0) {
+      figma.closePlugin(`❌ No layers selected. Please select at least one layer and try again.`);
+      return;
+    }
+    const textNodes = selectedNodes.flatMap(node => {
+      if ('findAll' in node) { // 타입 가드를 사용하여 findAll 메소드가 있는 노드만 처리
+        return node.findAll((n: SceneNode) => n.type === 'TEXT') as TextNode[];
+      }
+      return [];
+    });
+
     await loadAllFonts(textNodes);
     if (textNodes.length === 0) {
-      console.log(`No text nodes found on the current page.`)
-      return
+      console.log(`No text nodes found in the selected layers.`)
+      figma.closePlugin(`❌ No text nodes found in the selected layers. Please select layers with text and try again.`);
+      return;
     }
     let count = 0
     let ignored = 0
