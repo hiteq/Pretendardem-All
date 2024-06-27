@@ -25,6 +25,35 @@ const loadAllFonts = async (textNodes: SceneNode[]) => {
   await Promise.all(fontPromises);
 }
 
+async function processTextNode(textNode: TextNode): Promise<boolean> {
+  if (textNode.hasMissingFont) {
+    console.log(`텍스트 노드에 누락된 폰트가 있습니다: ${textNode.id}`);
+    return false;
+  }
+
+  try {
+    if (textNode.fontWeight === figma.mixed || textNode.fontName === figma.mixed) {
+      for (let i = 0; i < textNode.characters.length; i++) {
+        const charWeight = Number(textNode.getRangeFontWeight(i, i+1));
+        const charFontName = textNode.getRangeFontName(i, i+1);
+        if (typeof charFontName !== 'symbol') {
+          await figma.loadFontAsync(charFontName);
+          await figma.loadFontAsync({ family: fontName, style: String(getFontStyle(charWeight)) });
+          textNode.setRangeFontName(i, i+1, { family: fontName, style: String(getFontStyle(charWeight)) });
+        }
+      }
+    } else {
+      const cssWeight = Number(textNode.fontWeight);
+      await figma.loadFontAsync({ family: textNode.fontName.family, style: String(getFontStyle(cssWeight)) });
+      textNode.fontName = { family: fontName, style: String(getFontStyle(cssWeight)) };
+    }
+    return true;
+  } catch (error) {
+    console.error(`텍스트 노드 처리 중 오류 발생: ${textNode.id}`, error);
+    return false;
+  }
+}
+
 loadFonts()
   .then(async () => {
     console.log(`Fonts loaded.`)
@@ -36,7 +65,9 @@ loadFonts()
       return;
     }
     const textNodes = selectedNodes.flatMap(node => {
-      if ('findAll' in node) { // 타입 가드를 사용하여 findAll 메소드가 있는 노드만 처리
+      if (node.type === 'TEXT') {
+        return [node as TextNode];
+      } else if ('findAll' in node) {
         return node.findAll((n: SceneNode) => n.type === 'TEXT') as TextNode[];
       }
       return [];
@@ -48,43 +79,13 @@ loadFonts()
       figma.closePlugin(`❌ No text nodes found in the selected layers. Please select layers with text and try again.`);
       return;
     }
-    let count = 0
-    let ignored = 0
-    figma.notify(`Processing ${textNodes.length} layers...`, { timeout: 500 })
+    figma.notify(`${textNodes.length} layers processing...`, { timeout: 500 })
 
-    for (const textNode of textNodes) {
+    const results = await Promise.all(textNodes.map(processTextNode));
+    const count = results.filter(Boolean).length;
 
-      if (textNode.hasMissingFont) {
-        console.log(`Text node has missing font: ${textNode.id}`);
-        continue;
-      }
-
-      if (textNode.fontWeight === figma.mixed || textNode.fontName === figma.mixed) {
-        for (let i = 0; i < textNode.characters.length; i++) {
-          const charWeight = Number(textNode.getRangeFontWeight(i, i+1))
-          const charFontName = textNode.getRangeFontName(i, i+1)
-          console.log(charWeight)
-          if (typeof charFontName !== 'symbol') {
-            await figma.loadFontAsync(charFontName)
-            await figma.loadFontAsync({ family: fontName, style: String(getFontStyle(charWeight)) })
-            textNode.setRangeFontName(i, i+1, { family: fontName, style: String(getFontStyle(charWeight)) })
-          }
-        }
-        
-        count++
-
-        continue
-      }
-
-      const cssWeight = Number(textNode.fontWeight)
-      await figma.loadFontAsync({ family: textNode.fontName.family, style: String(getFontStyle(cssWeight)) })
-      textNode.fontName = { family: fontName, style: String(getFontStyle(cssWeight)) }
-
-      count++
-
-    }
-    console.log(`All done.`)
-    figma.closePlugin(`✅ All ${count} text layers have been updated.`)
+    console.log(`All done. Processed ${count} nodes.`);
+    figma.closePlugin(`✅ ${count} text layers have been updated.`)
   })
   .catch((error) => {
     console.log(error)
